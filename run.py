@@ -1,5 +1,5 @@
 from pathlib import Path
-import sys
+import sys, os
 
 #data = Path('Qx1Csp.rnd').read_bytes()
 #print(data[:5])
@@ -10,19 +10,21 @@ filenames = ['1st_file.bin', '2nd_file.bin', '3rd_file.bin']
 
 def readBytes(filename, nBytes):
 
-    with open(filename, 'rb') as file:
-        while True:
-            byte = file.read(1)
-            if byte:
-                yield byte
-            else:
-                break
-            
-            if nBytes > 0:
-                nBytes -= 1
-                if nBytes == 0:
+    try:
+        with open(filename, 'rb') as file:
+            while True:
+                byte = file.read(1)
+                if byte:
+                    yield byte
+                else:
                     break
-
+                
+                if nBytes > 0:
+                    nBytes -= 1
+                    if nBytes == 0:
+                        break
+    except EnvironmentError:
+        print("Access error: Can't open file...")
 
 
 def compare_files(filenames: list[Path]) -> dict[int, str]:
@@ -46,12 +48,9 @@ def compare_files(filenames: list[Path]) -> dict[int, str]:
 
     listPrimary = allfiles[0]
     #print(listPrimary)
-
     others = len(allfiles)-1
     otherFiles = allfiles[-others:]
-
     #print(otherFiles)
-
     
     results: dict[int, str] = {}
         
@@ -59,7 +58,6 @@ def compare_files(filenames: list[Path]) -> dict[int, str]:
     for tokenPosStart in range(0, len(allfiles[0])):
             
         token = []
-
             
         for tokenPos in range(tokenPosStart, len(allfiles[0])):
     
@@ -90,31 +88,48 @@ def compare_files(filenames: list[Path]) -> dict[int, str]:
 
                         if len(found) >= maxTokenLength:    #maximize length of common token
                             maxTokenLength = len(found)
-                            results[filenumber] = found
+                            results[filenumber + 1] = found
 
                     pos += 1
 
     return results    
 
+def rotatePaths(paths: list[Path]) -> list[Path]:
+    rotate = paths.pop(0)
+    paths.append(rotate)
+    
+    return paths
+
 
 def main(args=None):
-    print(sys.argv[1:])
+    #print(sys.argv[1:])
+    folder = sys.argv[1:][0]
+    print(folder)
+
+    files = os.listdir(folder)
+
     paths: list[Path] = []    
 
-    for file in sys.argv[1:]:
+    for file in files:
+        #print(file)
 
-        path_file = Path(file)
+        path_file = Path(folder + "\\" + file)
+        print(path_file)
 
-        if path_file.exists():           
+        if path_file.exists():
             paths.append(path_file)
             
 
-
-    print(compare_files(paths)[0])
+    for i in range(len(paths)): #rotate primary file through list
+        print(paths)
+        print(compare_files(paths))
+        paths = rotatePaths(paths)
 
 
 #run with:
-#python .\run.py 1st_file.bin 2nd_file.bin
+#python .\run.py C:\temp\testfolder
+
+
 
 
 if __name__ == "__main__":
