@@ -1,12 +1,11 @@
 from pathlib import Path
-
+import sys
 
 #data = Path('Qx1Csp.rnd').read_bytes()
 #print(data[:5])
 
 filename = '1st_file.bin'
 filenames = ['1st_file.bin', '2nd_file.bin', '3rd_file.bin']
-numberOfFiles = len(filenames)
 
 
 def readBytes(filename, nBytes):
@@ -25,68 +24,98 @@ def readBytes(filename, nBytes):
                     break
 
 
-allfiles = []
 
-for x in range(numberOfFiles):
-    filecontent = []
+def compare_files(filenames: list[Path]) -> dict[int, str]:
     
-    for b in readBytes(filenames[x], 32):
-        i = int.from_bytes(b, byteorder='big')
-        filecontent.append(bin(i))
-        #print(f"raw({b}) - int({i}) - binary({bin(i)})")
-    
-    allfiles.append(filecontent)
-  
+    numberOfFiles = len(filenames)
+    allfiles = []
 
-    
-print("Number of files: " + str(len(allfiles)))
-listPrimary = allfiles[0]
-print(listPrimary)
-#print(len(allfiles[0]))
-#Longest common string between one file and others:
-
-#print(allfiles[0][0] == allfiles[1][0])
-
-others = len(allfiles)-1
-otherFiles = allfiles[-others:]
-
-#token = allfiles[0][0]
-
-#test = [1,2,3,4,5,6]
-#test2 = [7,8,3,4,55,66]
-#print(test[2:4] == test2[2:5])
-#out = test[2:4]
-#print(out)
-
-    
-#token = []
-#token.append(allfiles[0][0])
-print(otherFiles)
-#print("Token = " + str(token))
-
-    
-    
-for tokenPosStart in range(0, len(allfiles[0])):
+    for x in range(numberOfFiles):
+        filecontent = []
         
-    token = []
+        for b in readBytes(filenames[x], 320):
+            i = int.from_bytes(b, byteorder='big')
+            filecontent.append(bin(i))
+            #print(f"raw({b}) - int({i}) - binary({bin(i)})")
+        
+        allfiles.append(filecontent)
+    
 
-    maxTokenLength = 0    
-    for tokenPos in range(tokenPosStart, len(allfiles[0])):
-   
-        token.append(allfiles[0][tokenPos]) #produce token
-                 
-        for filenumber in range(len(otherFiles)):   #compare to other files            
-            pos = 0
+        
+    print("Number of files: " + str(len(allfiles)))
+
+    listPrimary = allfiles[0]
+    #print(listPrimary)
+
+    others = len(allfiles)-1
+    otherFiles = allfiles[-others:]
+
+    #print(otherFiles)
+
+    
+    results: dict[int, str] = {}
+        
+    maxTokenLength = 0
+    for tokenPosStart in range(0, len(allfiles[0])):
             
-            while pos < (len(otherFiles[filenumber])-1):
+        token = []
+
             
-                test = otherFiles[filenumber][pos:pos+len(token)]
+        for tokenPos in range(tokenPosStart, len(allfiles[0])):
+    
+            token.append(allfiles[0][tokenPos]) #produce token
+                    
+            for filenumber in range(len(otherFiles)):   #compare to other files            
+                pos = 0
+                
+                while pos < (len(otherFiles[filenumber])-1):
+                
+                    test = otherFiles[filenumber][pos:pos+len(token)]
 
-                if (token == test) & (len(token) >= 4): #length filter to be omitted
-                    #save found substring                  
-                    print("Found: " + str(token))
+                    if (token == test) & (len(token) >= 4): #length filter to be omitted
+                        #save found substring                  
+                        #print("Found: " + str(token))
 
-                    for x in token:
-                         print(chr(int(x,2)), end='')
-                    print('')
-                pos += 1
+                        found: str = ""
+                        for x in token:
+                            #concat = chr(int(x,2))
+                            concat = hex(int(x,2)).replace('0x', '')
+                            if len(concat) == 1:
+                                concat = "0" + concat
+
+                            found = found + concat
+
+                        #print("filenumber = " + str(filenumber))
+                        #print(found)
+
+                        if len(found) >= maxTokenLength:    #maximize length of common token
+                            maxTokenLength = len(found)
+                            results[filenumber] = found
+
+                    pos += 1
+
+    return results    
+
+
+def main(args=None):
+    print(sys.argv[1:])
+    paths: list[Path] = []    
+
+    for file in sys.argv[1:]:
+
+        path_file = Path(file)
+
+        if path_file.exists():           
+            paths.append(path_file)
+            
+
+
+    print(compare_files(paths)[0])
+
+
+#run with:
+#python .\run.py 1st_file.bin 2nd_file.bin
+
+
+if __name__ == "__main__":
+    main()
