@@ -35,7 +35,7 @@ def compare_files(filenames: list[Path]) -> dict[int, str]:
     for x in range(numberOfFiles):
         filecontent = []
         
-        for b in readBytes(filenames[x], 320):
+        for b in readBytes(filenames[x], 64):
             i = int.from_bytes(b, byteorder='big')
             filecontent.append(bin(i))
             #print(f"raw({b}) - int({i}) - binary({bin(i)})")
@@ -44,7 +44,7 @@ def compare_files(filenames: list[Path]) -> dict[int, str]:
     
 
         
-    print("Number of files: " + str(len(allfiles)))
+    #print("Number of files: " + str(len(allfiles)))
 
     listPrimary = allfiles[0]
     #print(listPrimary)
@@ -119,10 +119,21 @@ def main(args=None):
         if path_file.exists():
             paths.append(path_file)
             
+    print("Number of files: " + str(len(paths)) + "\n")
 
     for i in range(len(paths)): #rotate primary file through list
-        print(paths)
-        print(compare_files(paths))
+        
+        
+        #print(paths)               
+        results_dict = compare_files(paths)
+        #print(results_dict)
+
+        print("Længste fællesstreng mellem fil({path}) og følgende filer er:".format(path=paths[0]))
+        for key, value in results_dict.items():
+            print(str(paths[key]) + " - strengen er: " +str(value))
+
+        print("\n")
+
         paths = rotatePaths(paths)
 
 
