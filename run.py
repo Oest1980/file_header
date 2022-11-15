@@ -27,15 +27,17 @@ def readBytes(filename, nBytes):
         print("Access error: Can't open file...")
 
 
-def compare_files(filenames: list[Path]) -> dict[int, str]:
+def compare_files(filenames: list[Path], header_size: int = None) -> dict[int, str]:
     
+    #print("header_size = " + str(header_size))
+
     numberOfFiles = len(filenames)
     allfiles = []
 
     for x in range(numberOfFiles):
         filecontent = []
         
-        for b in readBytes(filenames[x], 64):
+        for b in readBytes(filenames[x], header_size):
             i = int.from_bytes(b, byteorder='big')
             filecontent.append(bin(i))
             #print(f"raw({b}) - int({i}) - binary({bin(i)})")
@@ -101,34 +103,52 @@ def rotatePaths(paths: list[Path]) -> list[Path]:
     return paths
 
 
+histogram: dict[str, int] = {}
+
 def main(args=None):
     #print(sys.argv[1:])
-    folder = sys.argv[1:][0]
+    
+    if sys.argv[1] == "--help":
+        print("Arguments are: folder & header size")
+        sys.exit(0)
+    elif sys.argv[1] == "--version":
+        print("Version 0.1.0")
+        sys.exit(0)
+    #elif len(sys.argv) < 3:
+    #    print("Error less than two arguments, two needed.")
+    #    sys.exit(0)
+
+    folder = sys.argv[1]
+    if len(sys.argv) == 3:
+        header_size = int(sys.argv[2])
+    else:
+        header_size = 320
+        print("Header size = " + str(header_size))
+    #print(header_size)
     print(folder)
 
-    files = os.listdir(folder)
 
-    paths: list[Path] = []    
+    # files = os.listdir(folder)
 
-    for file in files:
-        #print(file)
+    paths: list[Path] = [f for f in Path(folder).iterdir() if f.is_file()]    
 
-        path_file = Path(folder + "\\" + file)
-        print(path_file)
+    # for file in files:
+    #     #print(file)
 
-        if path_file.exists():
-            paths.append(path_file)
+    #     path_file = Path(folder, file)
+    #     print(path_file)
+
+    #     if path_file.exists():
+    #         paths.append(path_file)
             
     print("Number of files: " + str(len(paths)) + "\n")
 
     for i in range(len(paths)): #rotate primary file through list
-        
-        
         #print(paths)               
-        results_dict = compare_files(paths)
+        results_dict = compare_files(paths, header_size)
         #print(results_dict)
 
-        print("Længste fællesstreng mellem fil({path}) og følgende filer er:".format(path=paths[0]))
+        print("The longest common string between file({path}) and the following files are:".format(path=paths[0]))
         for key, value in results_dict.items():
             print(str(paths[key]) + " - strengen er: " +str(value))
 
